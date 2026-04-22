@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>보험사 AI 사례 매트릭스</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Noto Sans KR',sans-serif;background:#F0F4F8;color:#1E293B;display:flex;flex-direction:column;height:100vh}
+
+/* ── TOP HEADER ── */
+.top-header{height:54px;background:#1E3A5F;display:flex;align-items:center;padding:0 18px;gap:14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.header-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;color:#93C5FD;text-transform:uppercase}
+.header-title{font-size:15px;font-weight:800;color:#fff}
+.header-badge{padding:4px 11px;border-radius:999px;background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.5);font-size:10px;color:#FDE68A;font-weight:700}
+.view-toggle{margin-left:auto;display:flex;gap:5px;background:rgba(255,255,255,.1);padding:3px;border-radius:9px}
+.vt-btn{padding:5px 14px;border-radius:7px;border:none;background:transparent;color:rgba(255,255,255,.6);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.vt-btn.active{background:#fff;color:#1E3A5F}
+
+/* ── YEAR FILTER BAR ── */
+.year-bar{height:42px;background:#fff;border-bottom:2px solid #E2E8F0;display:flex;align-items:center;padding:0 16px;gap:7px;flex-shrink:0}
+.year-label{font-size:10px;color:#94A3B8;font-weight:600;margin-right:4px}
+.yf-btn{padding:4px 12px;border-radius:999px;border:1.5px solid #CBD5E1;background:#fff;color:#64748B;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.yf-btn:hover{border-color:#6366F1;color:#6366F1}
+.yf-btn.active{border-color:#2563EB;color:#fff;background:#2563EB}
+.yf-btn.era-legacy.active{border-color:#7C3AED;color:#fff;background:#7C3AED}
+.total-count{margin-left:auto;font-size:11px;color:#94A3B8}
+.total-count span{color:#2563EB;font-weight:800}
+
+/* ── MAIN LAYOUT ── */
+.main-layout{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:172px;flex-shrink:0;background:#fff;border-right:2px solid #E2E8F0;overflow-y:auto;padding:10px 0}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:2px}
+.group-label{font-size:9px;font-weight:800;letter-spacing:.15em;color:#94A3B8;text-transform:uppercase;padding:10px 14px 4px}
+.co-item{display:flex;align-items:center;gap:7px;padding:7px 14px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.co-item:hover{background:#F8FAFC}
+.co-item.active{background:#EFF6FF;border-left-color:#2563EB}
+.co-item.active .co-name{color:#2563EB;font-weight:700}
+.co-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.co-name{font-size:11px;font-weight:500;color:#475569}
+.co-cnt{margin-left:auto;font-size:9px;color:#94A3B8;background:#F1F5F9;padding:2px 6px;border-radius:999px;font-weight:700}
+.sidebar-div{height:1px;background:#F1F5F9;margin:6px 0}
+
+/* ── MATRIX VIEW ── */
+.content-area{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.col-headers{display:grid;grid-template-columns:118px 1fr 1fr 1fr;border-bottom:2px solid #E2E8F0;flex-shrink:0;background:#fff}
+.col-hdr{padding:10px 14px;border-left:1px solid #E2E8F0;display:flex;align-items:center;gap:7px}
+.col-hdr-title{font-size:12px;font-weight:800;color:#1E293B}
+.col-hdr-sub{font-size:10px;color:#94A3B8}
+.col-icon{font-size:16px}
+.table-body{flex:1;overflow-y:auto;background:#F8FAFC}
+.table-body::-webkit-scrollbar{width:4px}
+.table-body::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:2px}
+.trow{display:grid;grid-template-columns:118px 1fr 1fr 1fr;border-bottom:1px solid #E2E8F0;min-height:52px;background:#fff;transition:background .1s}
+.trow:hover{background:#F8FAFC}
+.trow.hl{background:#EFF6FF}
+.row-co{padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px;border-right:1px solid #E2E8F0}
+.row-co-name{font-size:11px;font-weight:800}
+.row-co-type{display:inline-block;font-size:8px;padding:2px 6px;border-radius:999px;font-weight:700}
+.row-cell{padding:7px 9px;border-left:1px solid #F1F5F9;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;border:1.5px solid;cursor:pointer;transition:all .15s;max-width:100%}
+.chip:hover{transform:translateY(-1px);filter:brightness(.95)}
+.chip-title{font-size:10px;font-weight:700;line-height:1.3}
+.chip-vendor{font-size:8px;opacity:.7}
+.chip-arr{font-size:9px;opacity:.5;flex-shrink:0}
+.chip-year{font-size:8px;padding:1px 5px;border-radius:999px;font-weight:800;flex-shrink:0}
+.cell-empty{padding:7px 9px;border-left:1px solid #F1F5F9;display:flex;align-items:center;justify-content:center}
+.empty-dash{width:14px;height:1px;background:#E2E8F0}
+
+/* ── TREND VIEW ── */
+.trend-layout{display:flex;flex:1;overflow:hidden}
+.trend-sidebar{width:220px;flex-shrink:0;background:#fff;border-right:2px solid #E2E8F0;overflow-y:auto;padding:10px 0}
+.trend-sidebar::-webkit-scrollbar{width:3px}
+.trend-sidebar::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:2px}
+.ct-item{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.ct-item:hover{background:#F8FAFC}
+.ct-item.active{background:#EFF6FF;border-left-color:#2563EB}
+.ct-item.active .ct-name{color:#2563EB;font-weight:700}
+.ct-icon{font-size:18px;flex-shrink:0}
+.ct-name{font-size:11px;font-weight:600;color:#475569;line-height:1.4}
+.ct-cnt{margin-left:auto;font-size:9px;color:#94A3B8;background:#F1F5F9;padding:2px 6px;border-radius:999px;font-weight:700;flex-shrink:0}
+.trend-main{flex:1;overflow-y:auto;padding:24px;background:#F8FAFC}
+.trend-main::-webkit-scrollbar{width:4px}
+.trend-main::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:2px}
+.trend-header{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.trend-h-icon{font-size:30px;margin-bottom:8px}
+.trend-h-title{font-size:18px;font-weight:800;color:#1E293B;margin-bottom:4px}
+.trend-h-desc{font-size:12px;color:#64748B;line-height:1.7}
+.trend-h-pills{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.trend-h-pill{padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700}
+.trend-timeline{position:relative}
+.trend-timeline::before{content:'';position:absolute;left:64px;top:0;bottom:0;width:2px;background:#E2E8F0}
+.tl-item{display:flex;gap:12px;margin-bottom:14px;position:relative;cursor:pointer}
+.tl-year{width:60px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;padding-top:16px}
+.tl-year-badge{padding:3px 8px;border-radius:7px;font-size:10px;font-weight:800;text-align:center;min-width:40px}
+.y2020{background:#EDE9FE;color:#6D28D9}
+.y2021{background:#EDE9FE;color:#6D28D9}
+.y2022{background:#EDE9FE;color:#6D28D9}
+.y2023{background:#EDE9FE;color:#6D28D9}
+.y2024{background:#FEF3C7;color:#92400E}
+.y2025{background:#DBEAFE;color:#1E40AF}
+.y2026{background:#D1FAE5;color:#065F46}
+.tl-dot-wrap{display:flex;align-items:flex-start;padding-top:18px}
+.tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;position:relative;z-index:1;border:2px solid #fff;box-shadow:0 0 0 2px}
+.tl-card{flex:1;background:#fff;border:1.5px solid #E2E8F0;border-radius:12px;padding:14px 16px;transition:all .15s}
+.tl-card:hover{border-color:#93C5FD;box-shadow:0 4px 12px rgba(37,99,235,.08)}
+.tl-card-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.tl-co-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.tl-co-name{font-size:11px;font-weight:800}
+.tl-co-type{font-size:9px;padding:2px 7px;border-radius:999px;font-weight:700}
+.tl-title{font-size:13px;font-weight:700;color:#1E293B;margin-bottom:4px}
+.tl-desc{font-size:11px;color:#64748B;line-height:1.6}
+.tl-vendor{font-size:10px;color:#94A3B8;margin-top:6px;font-weight:500}
+.tl-vendor span{color:#475569;font-weight:600}
+.tl-empty{padding:60px;text-align:center;color:#94A3B8;font-size:13px}
+.trend-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#94A3B8}
+.trend-placeholder-icon{font-size:48px}
+.trend-placeholder-text{font-size:14px;font-weight:500}
+
+/* ── DETAIL PANEL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.detail{position:fixed;top:0;right:0;height:100vh;width:400px;background:#fff;border-left:2px solid #E2E8F0;z-index:51;transform:translateX(100%);transition:transform .25s ease;overflow-y:auto;display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1)}
+.detail.open{transform:translateX(0)}
+.detail::-webkit-scrollbar{width:3px}
+.detail::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:2px}
+.d-top{padding:20px;border-bottom:2px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:#F8FAFC}
+.d-close{width:28px;height:28px;border-radius:50%;background:#E2E8F0;border:none;color:#64748B;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.d-close:hover{background:#CBD5E1;color:#1E293B}
+.d-co-row{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.d-co-name{font-size:12px;font-weight:800}
+.d-cat-badge{padding:2px 8px;border-radius:999px;font-size:9px;font-weight:800}
+.d-title{font-size:16px;font-weight:800;color:#1E293B;line-height:1.4}
+.d-body{padding:20px;flex:1}
+.d-sec{margin-bottom:18px}
+.d-sec-lbl{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:8px}
+.d-sec-txt{font-size:12px;color:#475569;line-height:1.8;background:#F8FAFC;padding:12px 14px;border-radius:10px;border:1px solid #E2E8F0}
+.d-vendor-box{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px}
+.d-vendor-name{font-size:13px;font-weight:800;color:#2563EB}
+.d-vendor-sub{font-size:10px;color:#93C5FD}
+.d-art-btn{display:flex;align-items:center;gap:8px;padding:12px 14px;background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;text-decoration:none;transition:all .15s;margin-top:8px}
+.d-art-btn:hover{background:#DCFCE7;transform:translateY(-1px);box-shadow:0 4px 10px rgba(22,163,74,.15)}
+.d-art-title{font-size:12px;font-weight:700;color:#16A34A}
+.d-art-date{font-size:10px;color:#86EFAC;margin-top:1px}
+.d-art-arr{color:#16A34A;font-size:14px;font-weight:700}
+.d-year-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:800;margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="top-header">
+  <div>
+    <div class="header-eyebrow">Insurance × AI / Digital</div>
+    <div class="header-title">보험사 AI·Digital 사례 매트릭스</div>
+  </div>
+  <div class="header-badge">2020~2026.04 · 내부 스터디용</div>
+  <div class="view-toggle">
+    <button class="vt-btn active" id="btn-matrix" onclick="switchView('matrix')">🏢 회사별</button>
+    <button class="vt-btn" id="btn-trend" onclick="switchView('trend')">📈 케이스 트렌드</button>
+  </div>
+</div>
+
+<div class="year-bar">
+  <span class="year-label">연도 필터</span>
+  <button class="yf-btn active" onclick="setYear('all')">전체</button>
+  <button class="yf-btn era-legacy" onclick="setYear('legacy')">2020~2023</button>
+  <button class="yf-btn" onclick="setYear(2024)">2024</button>
+  <button class="yf-btn" onclick="setYear(2025)">2025</button>
+  <button class="yf-btn" onclick="setYear(2026)">2026</button>
+  <div class="total-count">표시 <span id="totalCount">0</span>건</div>
+</div>
+
+<div id="matrixView" class="main-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="content-area">
+    <div class="col-headers">
+      <div style="padding:10px 12px;border-right:1px solid #E2E8F0"></div>
+      <div class="col-hdr"><span class="col-icon">👥</span><div><div class="col-hdr-title">고객</div><div class="col-hdr-sub">보험금·청구·가입</div></div></div>
+      <div class="col-hdr"><span class="col-icon">👤</span><div><div class="col-hdr-title">Agent / 설계사</div><div class="col-hdr-sub">영업지원·훈련</div></div></div>
+      <div class="col-hdr"><span class="col-icon">💼</span><div><div class="col-hdr-title">임직원</div><div class="col-hdr-sub">내부업무·심사</div></div></div>
+    </div>
+    <div class="table-body" id="tableBody"></div>
+  </div>
+</div>
+
+<div id="trendView" class="main-layout" style="display:none">
+  <div class="trend-sidebar" id="trendSidebar"></div>
+  <div class="trend-main" id="trendMain">
+    <div class="trend-placeholder">
+      <div class="trend-placeholder-icon">📊</div>
+      <div class="trend-placeholder-text">왼쪽에서 케이스 유형을 선택해주세요</div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeDetail()"></div>
+<div class="detail" id="detail">
+  <div class="d-top">
+    <div style="flex:1">
+      <div class="d-co-row"><span class="d-co-name" id="dCo"></span><span class="d-cat-badge" id="dCat"></span></div>
+      <div class="d-title" id="dTitle"></div>
+      <div class="d-year-badge" id="dYearBadge"></div>
+    </div>
+    <button class="d-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="d-body">
+    <div class="d-sec"><div class="d-sec-lbl">도입 내용</div><div class="d-sec-txt" id="dDetail"></div></div>
+    <div class="d-sec">
+      <div class="d-sec-lbl">솔루션 업체</div>
+      <div class="d-vendor-box"><span style="font-size:18px">🏭</span><div><div class="d-vendor-name" id="dVendor"></div><div class="d-vendor-sub">AI 솔루션 파트너</div></div></div>
+    </div>
+    <div class="d-sec">
+      <div class="d-sec-lbl">출처 기사</div>
+      <a class="d-art-btn" id="dArtBtn" href="#" target="_blank">
+        <div style="flex:1"><div class="d-art-title">기사 원문 보기</div><div class="d-art-date" id="dDate"></div></div>
+        <span class="d-art-arr">→</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── COMPANIES ───
+const COMPANIES=[
+  // 생보
+  {id:"kyobo",name:"교보생명",type:"생보",color:"#2563EB"},
+  {id:"samsung_life",name:"삼성생명",type:"생보",color:"#7C3AED"},
+  {id:"hanwha",name:"한화생명",type:"생보",color:"#EA580C"},
+  {id:"aia",name:"AIA생명",type:"생보",color:"#DB2777"},
+  {id:"nh",name:"NH농협생명",type:"생보",color:"#16A34A"},
+  {id:"sinhan",name:"신한라이프",type:"생보",color:"#0891B2"},
+  {id:"miraeasset",name:"미래에셋생명",type:"생보",color:"#D97706"},
+  {id:"kblife",name:"KB라이프",type:"생보",color:"#7C3AED"},
+  {id:"dongyang",name:"동양생명",type:"생보",color:"#0D9488"},
+  {id:"abl",name:"ABL생명",type:"생보",color:"#B45309"},
+  {id:"heungkuk",name:"흥국생명",type:"생보",color:"#9333EA"},
+  // 손보
+  {id:"samsung_fire",name:"삼성화재",type:"손보",color:"#DC2626"},
+  {id:"db",name:"DB손해보험",type:"손보",color:"#CA8A04"},
+  {id:"hyundai",name:"현대해상",type:"손보",color:"#9333EA"},
+  {id:"meritz",name:"메리츠화재",type:"손보",color:"#059669"},
+  {id:"kb_fire",name:"KB손해보험",type:"손보",color:"#2563EB"},
+  {id:"nh_fire",name:"NH농협손보",type:"손보",color:"#16A34A"},
+  {id:"kakaopay",name:"카카오페이손보",type:"손보",color:"#CA8A04"},
+];
+
+const CASE_TYPES=[
+  {id:"ocr",icon:"📄",name:"AI OCR / 보험금 자동지급",desc:"보험금 청구 서류를 AI가 자동 인식·분류하고 지급하는 시스템"},
+  {id:"fds",icon:"🚨",name:"보험사기 탐지 (FDS)",desc:"AI가 이상 패턴을 분석해 보험사기를 선제 탐지"},
+  {id:"uw",icon:"📋",name:"AI 언더라이팅 / 인수심사",desc:"AI가 자동으로 위험도를 평가하고 인수 여부를 판단"},
+  {id:"coverage",icon:"🎯",name:"보장분석 / 가입설계 AI",desc:"고객 보장 현황을 AI가 자동 분석하고 최적 설계 제안"},
+  {id:"training",icon:"🎓",name:"설계사 훈련 / 상담 지원",desc:"설계사 상담 역량 향상을 위한 AI 훈련·화법 지원"},
+  {id:"chatbot",icon:"🤖",name:"사내 AI 챗봇",desc:"임직원이 약관·내규·업무 매뉴얼을 AI로 즉시 검색"},
+  {id:"aicc",icon:"📞",name:"AI 음성봇 / AICC",desc:"고객 상담을 AI가 자동 처리하거나 지원하는 시스템"},
+  {id:"auth",icon:"🔒",name:"본인인증 / 보안",desc:"AI 기반 얼굴인증, 이상금융거래 탐지 등 보안 시스템"},
+];
+
+const CAT_CFG={
+  "고객":{color:"#1D4ED8",bg:"#EFF6FF",border:"#BFDBFE",text:"#1D4ED8"},
+  "agent":{color:"#C2410C",bg:"#FFF7ED",border:"#FED7AA",text:"#C2410C"},
+  "임직원":{color:"#15803D",bg:"#F0FDF4",border:"#BBF7D0",text:"#15803D"},
+};
+const CAT_LBL={"고객":"고객","agent":"Agent / 설계사","임직원":"임직원"};
+const YEAR_CFG={
+  2020:{bg:"#EDE9FE",color:"#6D28D9",border:"#C4B5FD"},
+  2021:{bg:"#EDE9FE",color:"#6D28D9",border:"#C4B5FD"},
+  2022:{bg:"#EDE9FE",color:"#6D28D9",border:"#C4B5FD"},
+  2023:{bg:"#EDE9FE",color:"#6D28D9",border:"#C4B5FD"},
+  2024:{bg:"#FEF3C7",color:"#92400E",border:"#FDE68A"},
+  2025:{bg:"#DBEAFE",color:"#1E40AF",border:"#93C5FD"},
+  2026:{bg:"#D1FAE5",color:"#065F46",border:"#6EE7B7"},
+};
+
+const CASES=[
+  // ── 2020~2023 LEGACY ──
+  {id:1,co:"hanwha",cat:"임직원",year:2020,caseType:"ocr",
+   title:"클레임 AI 자동심사 시스템",
+   detail:"업계 최초 보험금 AI 자동심사. 머신러닝·강화학습으로 지급·부지급·조사 자동 결정. 3년간 1,100만건 청구 데이터 학습(3만5천번 반복). 자동심사율 17%→34%. 특허 2건 취득. 향후 50% 목표. 5년간 비용 절감 120억원 예상.",
+   vendor:"자체 개발 + 애자일소다",date:"2020.09.21",url:"https://www.aitimes.kr/news/articleView.html?idxno=17802"},
+
+  {id:2,co:"hyundai",cat:"고객",year:2020,caseType:"aicc",
+   title:"완전판매모니터링 AI 음성봇",
+   detail:"업계 최초 AI음성봇 보험계약대출+완전판매모니터링 도입. 월 1만7천건 모니터링 AI 처리. 음성 인식률 95%. 24시간 서비스 가능. 마인즈랩과 공동 개발. 금융위 지정대리인 과제 선정.",
+   vendor:"마인즈랩",date:"2020.07.27",url:"https://v.daum.net/v/ASagmCwMeC"},
+
+  {id:3,co:"samsung_fire",cat:"임직원",year:2021,caseType:"fds",
+   title:"IFDS 최초 도입",
+   detail:"보험사기방지시스템 최초 구축 (코리아엑스퍼트 넥스큐브-IFDS). 고객 사고이력·위험지표 스코어링. ML 기반 관계 분석으로 가해자·피해자 연관성 및 조직형 사기 패턴 탐지. 이후 단계적 고도화로 2024년 적발 3배 증가.",
+   vendor:"코리아엑스퍼트 (넥스큐브-IFDS)",date:"2021.09.01",url:"https://www.investnews.co.kr/news/articleView.html?idxno=3002189"},
+
+  {id:4,co:"samsung_life",cat:"임직원",year:2023,caseType:"ocr",
+   title:"업스테이지 AI OCR 계약·파일럿",
+   detail:"업스테이지 Document AI 도입 계약 및 파일럿 완료. 보험청구서류 7종 자동화 검증. 평균 OCR 인식률 95%(목표 90% 초과). 이후 2025년 전면 서비스 출시로 연결.",
+   vendor:"업스테이지 (Document AI)",date:"2023.10.25",url:"https://www.upstage.ai/news/documentai-samsunglife"},
+
+  {id:5,co:"kakaopay",cat:"고객",year:2023,caseType:"ocr",
+   title:"AI OCR 즉시지급 시스템",
+   detail:"국내 최초 AI 즉시 지급 적용(해외여행보험). 고객이 영수증 이미지 제출하면 OCR이 자동 인식·분류 후 1분 이내 보험금 지급. 하루 평균 3,000건 자동 처리.",
+   vendor:"자체 개발 (Document AI 기반)",date:"2023.09.01",url:"http://www.seoulwire.com/news/articleView.html?idxno=679863"},
+
+  // ── 2024 ──
+  {id:6,co:"kyobo",cat:"고객",year:2025,caseType:"ocr",
+   title:"AI OCR 보험금 자동지급",
+   detail:"로민 Textscope® Studio 활용. 13종 청구서류 자동 인식. 평균 지급 2시간(업계 최단). 부지급률 1% 미만. AI 자동심사 + 즉시 송금 결합.",
+   vendor:"로민 (Textscope® Studio)",date:"2025.03.24",url:"https://www.venturesquare.net/962300"},
+
+  {id:7,co:"kyobo",cat:"agent",year:2025,caseType:"coverage",
+   title:"보장분석 AI 서포터",
+   detail:"FP가 고객 보장 현황 분석 후 최적 보장 제안 자동화. 상담 효율성·신뢰도 향상. 금융위 혁신금융서비스 지정(2024.12). 망분리 환경 내부망 운영.",
+   vendor:"자체 개발",date:"2025.09.04",url:"https://www.g-enews.com/article/Finance/2025/09/202509041158288404a6e8311f64_1"},
+
+  {id:8,co:"kyobo",cat:"agent",year:2025,caseType:"training",
+   title:"FP소장 AI 어시스턴트",
+   detail:"리크루팅·팀 성과 관리·수수료 예측 등 FP소장 업무 전반 지원. 모바일 기반. 혁신금융서비스 지정.",
+   vendor:"자체 개발",date:"2025.09.04",url:"https://www.g-enews.com/article/Finance/2025/09/202509041158288404a6e8311f64_1"},
+
+  {id:9,co:"kyobo",cat:"임직원",year:2025,caseType:"chatbot",
+   title:"AI Desk (임직원 생성형 AI)",
+   detail:"내부 생성형 AI 통합 서비스. 회의록·보고서 자동 작성, 약관·내규 질의응답. 인사·법무 상담 매뉴얼 학습. 혁신금융서비스 지정 내부망 운영.",
+   vendor:"자체 개발 (교보GPT)",date:"2025.09.04",url:"https://www.g-enews.com/article/Finance/2025/09/202509041158288404a6e8311f64_1"},
+
+  {id:10,co:"kyobo",cat:"임직원",year:2026,caseType:"fds",
+   title:"K-FDS (보험사기 탐지)",
+   detail:"SIU 실무 노하우를 AI에 학습. 보험사기 특성 자동 학습·유사 패턴 탐지. 연간 200건 이상 사기 의심 사례 선제 포착.",
+   vendor:"자체 개발",date:"2026.01.29",url:"https://www.investnews.co.kr/news/articleView.html?idxno=3002189"},
+
+  {id:11,co:"samsung_life",cat:"고객",year:2025,caseType:"ocr",
+   title:"AI OCR 보험금 자동심사",
+   detail:"청구서류 47종 분류, 주요 7종 데이터 자동 추출. 데이터 입력~심사~지급 전 프로세스 자동화. 내부망 설치로 망분리 준수.",
+   vendor:"업스테이지 (Document AI)",date:"2025.05.20",url:"https://www.etnews.com/20250520000023"},
+
+  {id:12,co:"samsung_life",cat:"고객",year:2025,caseType:"aicc",
+   title:"AICC 챗봇·음성봇",
+   detail:"챗봇 14개 운영, 월 8.5만건 처리. 음성봇 9개. STT 정확도 92%.",
+   vendor:"자체 개발",date:"2025.05.20",url:"https://www.etnews.com/20250520000023"},
+
+  {id:13,co:"samsung_life",cat:"agent",year:2026,caseType:"training",
+   title:"AI 상담 시뮬레이션 서비스",
+   detail:"실제 영업 환경 유사 상담 시나리오 생성. 설계사가 AI와 대화하며 상담 역량 훈련. 반복 연습으로 조직 전반 상담 수준 향상. 2026년 구축 중.",
+   vendor:"자체 개발",date:"2026.04.05",url:"https://www.sedaily.com/article/20028467"},
+
+  {id:14,co:"samsung_life",cat:"임직원",year:2025,caseType:"chatbot",
+   title:"AI 어드바이저",
+   detail:"콜센터 상담 내용 실시간 분석 → 최적 답변 자동 추천. 상담사 응대 품질·속도 향상.",
+   vendor:"자체 개발",date:"2025.05.20",url:"https://www.etnews.com/20250520000023"},
+
+  {id:15,co:"hanwha",cat:"고객",year:2025,caseType:"aicc",
+   title:"AICC (AI 컨택센터)",
+   detail:"자연어처리·음성인식 기반 단순 문의 자동처리. 대기시간 단축.",
+   vendor:"자체 개발 (AI연구소)",date:"2025.03.27",url:"https://www.eroun.net/news/articleView.html?idxno=54661"},
+
+  {id:16,co:"hanwha",cat:"agent",year:2024,caseType:"training",
+   title:"AI 가상대화 훈련 솔루션",
+   detail:"맞춤 화법 자동 생성 → 음성·자세·표정 AI 피드백. 뉴스→보장분석→상품특징→클로징 단계별 스크립트. 금융위 혁신금융서비스 지정(2024.12).",
+   vendor:"자체 개발 (AI연구소)",date:"2024.12.11",url:"https://www.etnews.com/20241211000317"},
+
+  {id:17,co:"hanwha",cat:"agent",year:2025,caseType:"coverage",
+   title:"가입설계 AI 에이전트",
+   detail:"고객 보장 급부 데이터 실시간 연동. 맞춤형 설계 결과 자동 생성. 금융위 혁신금융서비스 지정(2025.09). 올거나이즈 하이브리드 AI + MCI 실시간 연동.",
+   vendor:"자체 개발 + 올거나이즈",date:"2025.09.19",url:"https://www.asiae.co.kr/article/2025091815522529688"},
+
+  {id:18,co:"aia",cat:"고객",year:2025,caseType:"ocr",
+   title:"LLM 기반 AI OCR 보험금 지급",
+   detail:"비정형 문서까지 인식. 1일 이내 지급 비율 64.9%→83%. 전체 신속지급비율 97.8%.",
+   vendor:"미공개 (LLM 기반)",date:"2025.08.21",url:"https://www.aia.co.kr/ko/company-introduction/media-center/press-release/2025/press-release_2025_08_21.html"},
+
+  {id:19,co:"aia",cat:"고객",year:2025,caseType:"fds",
+   title:"AI OCR → 보험사기 탐지 확장",
+   detail:"AI OCR을 사기 탐지 영역으로 확장. 진단서 이상 패턴 자동 감지. 실제 보험사기 적발 후 수사기관 공유.",
+   vendor:"미공개 (LLM 기반)",date:"2025.12.01",url:"https://www.aia.co.kr/ko/company-introduction/media-center/press-release/2025/press-release_2025_12_01.html"},
+
+  {id:20,co:"nh",cat:"고객",year:2025,caseType:"coverage",
+   title:"AI 맞춤형 가입설계 서비스",
+   detail:"연령·직업·건강정보 기반 개인화 상품 추천·보장 조합 자동 설계. 농·축협 창구 영업 특화.",
+   vendor:"자체 개발",date:"2025.12.28",url:"https://www.fntimes.com/html/view.php?ud=202512280824105609dd55077bc2_18"},
+
+  {id:21,co:"nh",cat:"임직원",year:2025,caseType:"ocr",
+   title:"AI OCR 문서 자동화",
+   detail:"비정형 문서 자동 분류·데이터 추출. 보험 심사 및 내부 행정 업무 효율화.",
+   vendor:"자체 개발",date:"2025.10.28",url:"https://www.insnews.co.kr/news/articleView.html?idxno=86872"},
+
+  {id:22,co:"sinhan",cat:"고객",year:2024,caseType:"ocr",
+   title:"S-패스 (AI 즉시지급 서비스)",
+   detail:"진료 정보 입력 시 실시간 분석. 심사 없이 즉시 지급 또는 우선심사 자동 분류.",
+   vendor:"자체 개발",date:"2024.06.12",url:"https://www.opinionnews.co.kr/news/articleView.html?idxno=100019"},
+
+  {id:23,co:"sinhan",cat:"고객",year:2025,caseType:"aicc",
+   title:"AI 상담 요약 안내 서비스",
+   detail:"통화 내용 즉시 분석·핵심 요약 → 알림톡 발송. 시니어 고객 SOL메이트 콜센터 우선 적용 후 확대.",
+   vendor:"자체 개발",date:"2025.12.03",url:"https://www.economidaily.com/view/20251203154509289"},
+
+  {id:24,co:"miraeasset",cat:"고객",year:2026,caseType:"auth",
+   title:"AI 얼굴인증 시스템",
+   detail:"신분증 사진과 실시간 얼굴 이미지 AI 대조. 기존 1원 인증 대체. M-LIFE 앱·화상상담 적용. 얼굴정보 내재화 운영.",
+   vendor:"자체 개발 (내재화)",date:"2026.02.12",url:"https://www.getnews.co.kr/news/articleView.html?idxno=861109"},
+
+  {id:25,co:"miraeasset",cat:"임직원",year:2026,caseType:"chatbot",
+   title:"M:AI (사내 전용 AI 챗봇)",
+   detail:"나의AI·사규AI·매뉴얼AI 3종. Meta Llama 4.0 Scout 오픈소스 내부망 설치. 망분리 완벽 대응.",
+   vendor:"Meta Llama 4.0 Scout",date:"2026.02.10",url:"https://dazabi.com/insurance_magazine/article.php?id=7261"},
+
+  {id:26,co:"kblife",cat:"임직원",year:2026,caseType:"uw",
+   title:"AI 인수심사 자동화 (심사 QnA)",
+   detail:"약관·상품설명서 방대한 심사 자료를 AI가 즉시 검색·답변. 심사 처리 시간 단축·정확도 향상. 전사 AI 전환 첫 단계.",
+   vendor:"베스핀글로벌 (HelpNow Agentic AI)",date:"2026.03.19",url:"https://www.venturesquare.net/1059601"},
+
+  {id:27,co:"dongyang",cat:"임직원",year:2024,caseType:"fds",
+   title:"CRDS AI 고도화 (보험금 리스크 탐지)",
+   detail:"AI 기반 자동심사 시스템 구축. 자동심사비율 20%→45%. 보험금 청구 99% 1일 이내 처리. 전체 청구 절반 5분 이내 처리. 보험사기 감지 효율 63% 향상. 질병·병원·의사·모집인 등 다차원 이상징후 분석.",
+   vendor:"코리아엑스퍼트 (넥스큐브-IFDS)",date:"2024.10.07",url:"https://www.etoday.co.kr/news/view/2406955"},
+
+  {id:28,co:"abl",cat:"임직원",year:2026,caseType:"fds",
+   title:"지능형 AI 성능관리 시스템",
+   detail:"운영 중인 FDS AI 모델의 성능 저하 실시간 모니터링. 데이터 변화(Data Drift) 조기 감지 후 자동 알림. 아시아나IDT 모델옵스AI 활용. AI 모델 생명주기 체계적 관리.",
+   vendor:"아시아나IDT (ModelOps.AI)",date:"2026.01.28",url:"https://www.etoday.co.kr/news/view/2550173"},
+
+  {id:29,co:"heungkuk",cat:"임직원",year:2026,caseType:"fds",
+   title:"AI 기반 FDS 구축 착수",
+   detail:"보험금 지급 심사 정확도 극대화 및 지능형 보험사기 대응. AI가 청구 데이터 실시간 학습으로 이상 패턴 조기 탐지. 단순 반복 심사 AI 자동처리, 전문인력은 고위험 사례 집중. 손해율 예측 모델 동시 도입. 7월·12월 단계 적용.",
+   vendor:"코리아엑스퍼트",date:"2026.04.21",url:"https://www.dt.co.kr/article/12058601"},
+
+  {id:30,co:"samsung_fire",cat:"고객",year:2025,caseType:"ocr",
+   title:"AI 의료심사 시스템",
+   detail:"진단서·검사결과지·수술기록지 자동 분석. OCR+생성형 AI 결합. 암심사 인력 검토 비중 55% 감소.",
+   vendor:"자체 개발",date:"2025.12.12",url:"https://www.kukinews.com/article/view/kuk202512110243"},
+
+  {id:31,co:"samsung_fire",cat:"임직원",year:2025,caseType:"uw",
+   title:"장기U (AI 언더라이팅)",
+   detail:"전체 장기계약 90% 자동처리·정확도 99.9%. 승인율 71%→90%. 특허 취득. 할증·부담보 조건부 인수까지 AI 판단.",
+   vendor:"자체 개발",date:"2025.07.21",url:"https://www.viva100.com/article/20250721501602"},
+
+  {id:32,co:"samsung_fire",cat:"임직원",year:2026,caseType:"fds",
+   title:"IFDS 고도화 (보험사기 탐지)",
+   detail:"월평균 적발 15건·9억원. 도입 전 대비 3배 증가. 다발성·조직형 사기 패턴 탐지. 공모 관계 관계도 분석.",
+   vendor:"자체 개발",date:"2026.01.29",url:"https://www.investnews.co.kr/news/articleView.html?idxno=3002189"},
+
+  {id:33,co:"samsung_fire",cat:"임직원",year:2026,caseType:"uw",
+   title:"AI 입원치료 적정성 평가",
+   detail:"실손 입원치료 적정성 AI 자동 판단. 11시간→10분. 보험업계 최초 특허 등록. 간호기록지·세부기록지에서 의학 정보 추출. 불리한 결과는 담당자 재심사.",
+   vendor:"자체 개발",date:"2026.04.07",url:"https://www.etnews.com/20260407000117"},
+
+  {id:34,co:"db",cat:"고객",year:2026,caseType:"aicc",
+   title:"AI Agent 로보텔러",
+   detail:"자동차 사고 접수~보험금 지급 전 과정 AI. 30분 이내 원스톱. STT/TTS 기반 음성 대화형.",
+   vendor:"삼성SDS",date:"2026.02.19",url:"https://biz.heraldcorp.com/article/10678023"},
+
+  {id:35,co:"db",cat:"agent",year:2024,caseType:"coverage",
+   title:"AI비서 (사전 U/W)",
+   detail:"설계사 6,000명 사용. 월 고객 10만명. 보장분석+사전 인수심사 원스톱. 특허 취득.",
+   vendor:"자체 개발",date:"2024.06.12",url:"https://www.opinionnews.co.kr/news/articleView.html?idxno=100019"},
+
+  {id:36,co:"db",cat:"임직원",year:2026,caseType:"fds",
+   title:"IFDS (네트워크 관계 분석)",
+   detail:"위험 스코어링·이상징후 탐지·네트워크 관계 분석. 조직형·공모형 사기 탐지. DB T-System 추가 도입.",
+   vendor:"자체 개발",date:"2026.01.29",url:"https://www.investnews.co.kr/news/articleView.html?idxno=3002189"},
+
+  {id:37,co:"hyundai",cat:"고객",year:2025,caseType:"uw",
+   title:"2Q-PASS (AI 간편 언더라이팅)",
+   detail:"두 가지 알릴 의무만 고지하면 즉시 계약 체결. 대상 계약 40% 이상 적용.",
+   vendor:"자체 개발",date:"2025.07.21",url:"https://www.viva100.com/article/20250721501602"},
+
+  {id:38,co:"hyundai",cat:"고객",year:2025,caseType:"aicc",
+   title:"자동차보상 AI음성봇 확대",
+   detail:"보상처리 전반으로 서비스 확대. 예상 보험금·수리비까지 안내.",
+   vendor:"자체 개발",date:"2025.07.05",url:"https://www.etnews.com/20250520000026"},
+
+  {id:39,co:"hyundai",cat:"임직원",year:2025,caseType:"chatbot",
+   title:"AI 어시스턴트 전사 도입",
+   detail:"가입심사·지급심사·가격산출·상품개발 등 전 영역 AI 어시스턴트. KAIST 산학협력.",
+   vendor:"자체 개발 + KAIST",date:"2025.10.01",url:"https://www.hankyung.com/article/2025100196571"},
+
+  {id:40,co:"meritz",cat:"임직원",year:2026,caseType:"chatbot",
+   title:"LLM 내재화 + 음성봇",
+   detail:"심사 최적화 ML 모델과 음성봇 운영. 업무 특화 생성형 AI LLM 내재화 진행.",
+   vendor:"자체 개발",date:"2026.02.20",url:"https://www.kbanker.co.kr/news/articleView.html?idxno=224103"},
+
+  {id:41,co:"kb_fire",cat:"임직원",year:2025,caseType:"chatbot",
+   title:"AI 민원 해결 도우미",
+   detail:"고객 녹취 데이터 AI 분석. 민원 유형 자동 분류·처리 가이드 신속 제공.",
+   vendor:"자체 개발",date:"2025.11.03",url:"https://www.ezyeconomy.com/news/articleView.html?idxno=224681"},
+
+  {id:42,co:"kb_fire",cat:"임직원",year:2025,caseType:"uw",
+   title:"자동차사고 과실비율 AI Agent",
+   detail:"사고 내용 AI 자체 분석. 사고 유형별 과실비율 자동 산정. KB GenAI 포털 기반. 향후 민원관리·콜센터·인수심사로 확대 예정.",
+   vendor:"자체 개발 (KB GenAI)",date:"2025.09.18",url:"https://www.etnews.com/20250918000026"},
+
+  {id:43,co:"nh_fire",cat:"임직원",year:2025,caseType:"ocr",
+   title:"보험금 자동심사 시스템",
+   detail:"AI 기반 보험금 자동심사 도입. OCR 기술로 영수증 이미지에서 데이터 자동 추출·심사. 2028년까지 자동심사 비중 최대 17% 확대 목표. 비용 절감 33억원 추산.",
+   vendor:"자체 개발",date:"2025.05.27",url:"https://www.getnews.co.kr/news/articleView.html?idxno=822769"},
+];
+
+// ─── STATE ───
+let selCo=null, selCT="ocr", curYear="all", curView="matrix";
+
+function matchYear(c){
+  if(curYear==="all") return true;
+  if(curYear==="legacy") return c.year<=2023;
+  return c.year===curYear;
+}
+function setYear(y){
+  curYear=y;
+  document.querySelectorAll(".yf-btn").forEach(b=>b.classList.remove("active"));
+  const map={"all":0,"legacy":1,2024:2,2025:3,2026:4};
+  document.querySelectorAll(".yf-btn")[map[y]]?.classList.add("active");
+  render();
+}
+function switchView(v){
+  curView=v;
+  document.getElementById("matrixView").style.display=v==="matrix"?"flex":"none";
+  document.getElementById("trendView").style.display=v==="trend"?"flex":"none";
+  document.getElementById("btn-matrix").classList.toggle("active",v==="matrix");
+  document.getElementById("btn-trend").classList.toggle("active",v==="trend");
+  render();
+}
+function render(){
+  if(curView==="matrix"){ renderSidebar(); renderTable(); }
+  else { renderTrendSidebar(); renderTrendMain(); }
+  document.getElementById("totalCount").textContent=CASES.filter(c=>matchYear(c)).length;
+}
+
+// ─── SIDEBAR ───
+function renderSidebar(){
+  const el=document.getElementById("sidebar");
+  const total=CASES.filter(c=>matchYear(c)).length;
+  let h=`<div class="co-item ${selCo===null?"active":""}" onclick="selectCo(null)">
+    <div class="co-dot" style="background:#2563EB"></div>
+    <div class="co-name">전체 보기</div>
+    <div class="co-cnt">${total}</div>
+  </div><div class="sidebar-div"></div>
+  <div class="group-label">생보</div>`;
+  COMPANIES.filter(c=>c.type==="생보").forEach(co=>{
+    const cnt=CASES.filter(c=>c.co===co.id&&matchYear(c)).length;
+    h+=`<div class="co-item ${selCo===co.id?"active":""}" onclick="selectCo('${co.id}')">
+      <div class="co-dot" style="background:${co.color}"></div>
+      <div class="co-name">${co.name}</div>
+      ${cnt>0?`<div class="co-cnt">${cnt}</div>`:""}
+    </div>`;
+  });
+  h+=`<div class="sidebar-div"></div><div class="group-label">손보</div>`;
+  COMPANIES.filter(c=>c.type==="손보").forEach(co=>{
+    const cnt=CASES.filter(c=>c.co===co.id&&matchYear(c)).length;
+    h+=`<div class="co-item ${selCo===co.id?"active":""}" onclick="selectCo('${co.id}')">
+      <div class="co-dot" style="background:${co.color}"></div>
+      <div class="co-name">${co.name}</div>
+      ${cnt>0?`<div class="co-cnt">${cnt}</div>`:""}
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+
+// ─── TABLE ───
+function renderTable(){
+  const el=document.getElementById("tableBody");
+  const cos=selCo?COMPANIES.filter(c=>c.id===selCo):COMPANIES;
+  let h="";
+  cos.forEach(co=>{
+    const casesFor=cat=>CASES.filter(c=>c.co===co.id&&c.cat===cat&&matchYear(c));
+    const hasCases=CASES.filter(c=>c.co===co.id&&matchYear(c)).length>0;
+    if(!hasCases && selCo===null) return;
+    const tc=co.type==="생보"?"#1D4ED8":"#DC2626";
+    const tb=co.type==="생보"?"#DBEAFE":"#FEE2E2";
+    h+=`<div class="trow ${selCo===co.id?"hl":""}">
+      <div class="row-co">
+        <div class="row-co-name" style="color:${co.color}">${co.name}</div>
+        <span class="row-co-type" style="background:${tb};color:${tc}">${co.type}</span>
+      </div>`;
+    ["고객","agent","임직원"].forEach(cat=>{
+      const cats=casesFor(cat);
+      if(!cats.length){h+=`<div class="cell-empty"><div class="empty-dash"></div></div>`;}
+      else{
+        const cfg=CAT_CFG[cat];
+        h+=`<div class="row-cell">`;
+        cats.forEach(c=>{
+          const yc=YEAR_CFG[c.year]||{bg:"#F1F5F9",color:"#475569",border:"#CBD5E1"};
+          h+=`<div class="chip" style="background:${cfg.bg};border-color:${cfg.border}" onclick="openDetail(${c.id})">
+            <div>
+              <div class="chip-title" style="color:${cfg.text}">${c.title}</div>
+              <div class="chip-vendor" style="color:${cfg.text}">${c.vendor}</div>
+            </div>
+            <span class="chip-year" style="background:${yc.bg};color:${yc.color};border:1.5px solid ${yc.border}">${c.year}</span>
+          </div>`;
+        });
+        h+=`</div>`;
+      }
+    });
+    h+=`</div>`;
+  });
+  if(!h) el.innerHTML=`<div style="padding:40px;text-align:center;color:#94A3B8;font-size:13px">선택한 연도에 해당 회사의 사례가 없습니다</div>`;
+  else el.innerHTML=h;
+}
+
+// ─── TREND ───
+function renderTrendSidebar(){
+  const el=document.getElementById("trendSidebar");
+  let h=`<div class="group-label">케이스 유형</div>`;
+  CASE_TYPES.forEach(ct=>{
+    const cnt=CASES.filter(c=>c.caseType===ct.id&&matchYear(c)).length;
+    h+=`<div class="ct-item ${selCT===ct.id?"active":""}" onclick="selectCT('${ct.id}')">
+      <span class="ct-icon">${ct.icon}</span>
+      <div class="ct-name">${ct.name}</div>
+      <div class="ct-cnt">${cnt}</div>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+
+function renderTrendMain(){
+  const el=document.getElementById("trendMain");
+  const ct=CASE_TYPES.find(c=>c.id===selCT);
+  if(!ct){el.innerHTML=`<div class="trend-placeholder"><div class="trend-placeholder-icon">📊</div><div class="trend-placeholder-text">케이스 유형을 선택해주세요</div></div>`;return;}
+  const cases=CASES.filter(c=>c.caseType===ct.id&&matchYear(c)).sort((a,b)=>a.year-b.year||(a.date>b.date?1:-1));
+  const companies=[...new Set(cases.map(c=>c.co))];
+  let h=`<div class="trend-header">
+    <div class="trend-h-icon">${ct.icon}</div>
+    <div class="trend-h-title">${ct.name}</div>
+    <div class="trend-h-desc">${ct.desc}</div>
+    <div class="trend-h-pills">
+      <span class="trend-h-pill" style="background:#DBEAFE;color:#1E40AF">📌 ${cases.length}건</span>
+      <span class="trend-h-pill" style="background:#D1FAE5;color:#065F46">🏢 ${companies.length}개사 도입</span>
+      ${cases.length>0?`<span class="trend-h-pill" style="background:#FEF3C7;color:#92400E">📅 최초 ${Math.min(...cases.map(c=>c.year))}년</span>`:""}
+    </div>
+  </div>`;
+  if(!cases.length){h+=`<div class="tl-empty">선택한 연도 필터에 해당하는 사례가 없습니다.</div>`;el.innerHTML=h;return;}
+  h+=`<div class="trend-timeline">`;
+  cases.forEach(c=>{
+    const co=COMPANIES.find(x=>x.id===c.co);
+    const yc=YEAR_CFG[c.year]||{bg:"#F1F5F9",color:"#475569",border:"#CBD5E1"};
+    const tc=co.type==="생보"?"#1D4ED8":"#DC2626";
+    const tb=co.type==="생보"?"#DBEAFE":"#FEE2E2";
+    const isLegacy=c.year<=2023;
+    h+=`<div class="tl-item" onclick="openDetail(${c.id})">
+      <div class="tl-year"><span class="tl-year-badge y${c.year}">${c.year}</span></div>
+      <div class="tl-dot-wrap"><div class="tl-dot" style="background:${co.color};box-shadow:0 0 0 2px ${co.color}33"></div></div>
+      <div class="tl-card">
+        <div class="tl-card-top">
+          <div class="tl-co-dot" style="background:${co.color}"></div>
+          <div class="tl-co-name" style="color:${co.color}">${co.name}</div>
+          <span class="tl-co-type" style="background:${tb};color:${tc}">${co.type}</span>
+          ${isLegacy?`<span style="font-size:9px;padding:2px 7px;border-radius:999px;background:#EDE9FE;color:#6D28D9;font-weight:700;margin-left:auto">레거시</span>`:""}
+        </div>
+        <div class="tl-title">${c.title}</div>
+        <div class="tl-desc">${c.detail.substring(0,90)}${c.detail.length>90?"...":""}</div>
+        <div class="tl-vendor">솔루션: <span>${c.vendor}</span></div>
+      </div>
+    </div>`;
+  });
+  h+=`</div>`;
+  el.innerHTML=h;
+}
+
+function selectCo(id){selCo=id;render();}
+function selectCT(id){selCT=id;renderTrendMain();renderTrendSidebar();}
+
+// ─── DETAIL ───
+function openDetail(id){
+  const c=CASES.find(x=>x.id===id);if(!c)return;
+  const co=COMPANIES.find(x=>x.id===c.co);
+  const cfg=CAT_CFG[c.cat];
+  const yc=YEAR_CFG[c.year]||{bg:"#F1F5F9",color:"#475569",border:"#CBD5E1"};
+  document.getElementById("dCo").textContent=co.name;
+  document.getElementById("dCo").style.color=co.color;
+  document.getElementById("dCat").textContent=CAT_LBL[c.cat];
+  document.getElementById("dCat").style.cssText=`background:${cfg.bg};border:1.5px solid ${cfg.border};color:${cfg.text}`;
+  document.getElementById("dTitle").textContent=c.title;
+  document.getElementById("dDetail").textContent=c.detail;
+  document.getElementById("dVendor").textContent=c.vendor;
+  document.getElementById("dDate").textContent=`기사 날짜: ${c.date}`;
+  document.getElementById("dYearBadge").textContent=`${c.year}년 도입`;
+  document.getElementById("dYearBadge").style.cssText=`background:${yc.bg};color:${yc.color};border:1.5px solid ${yc.border}`;
+  document.getElementById("dArtBtn").href=c.url;
+  document.getElementById("overlay").classList.add("open");
+  document.getElementById("detail").classList.add("open");
+}
+function closeDetail(){
+  document.getElementById("overlay").classList.remove("open");
+  document.getElementById("detail").classList.remove("open");
+}
+
+render();
+</script>
+</body>
+</html>
